@@ -10,7 +10,7 @@ using GMap.NET.WindowsForms;
 using GMap.NET.WindowsForms.Markers;
 using GMap.NET.WindowsForms.ToolTips;
 
-namespace MobileVaccination
+namespace MobileVaccination.ClassDefinitions
 {
     public class Van
     {

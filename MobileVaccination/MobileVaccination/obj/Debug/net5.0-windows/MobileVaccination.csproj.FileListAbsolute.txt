@@ -34,3 +34,7 @@ C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\obj\Deb
 C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\obj\Debug\net5.0-windows\MobileVaccination.pdb
 C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\obj\Debug\net5.0-windows\MobileVaccination.genruntimeconfig.cache
 C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\obj\Debug\net5.0-windows\MobileVaccination.Mainform.resources
+C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\bin\Debug\net5.0-windows\Firebase.dll
+C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\bin\Debug\net5.0-windows\LiteDB.dll
+C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\bin\Debug\net5.0-windows\System.Reactive.dll
+C:\Projects\School\Cpts323Spring2021\MobileVaccination\MobileVaccination\bin\Debug\net5.0-windows\System.Runtime.InteropServices.WindowsRuntime.dll

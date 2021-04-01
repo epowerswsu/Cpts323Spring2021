@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Firebase.Database;
+using System.Net.Http;
+using System.Reactive.Linq;
+using MobileVaccination.ClassDefinitions;
 
 namespace MobileVaccination
 {
@@ -14,14 +18,14 @@ namespace MobileVaccination
         [STAThread]
         static void Main()
         {
-            System.Diagnostics.Debug.WriteLine("ENTER MAIN");
-
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Mainform());
-
-            System.Diagnostics.Debug.WriteLine("EXIT MAIN");
         }
+
+
     }
+
+
 }
