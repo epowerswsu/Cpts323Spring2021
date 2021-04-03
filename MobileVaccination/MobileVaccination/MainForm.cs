@@ -17,11 +17,14 @@ using System.Net.Http;
 using System.Reactive.Linq;
 using MobileVaccination.ClassDefinitions;
 
+
 namespace MobileVaccination
 {
     public partial class Mainform : Form
     {
+        public string googleMapsApiKey = "AIzaSyDuTNuYTmTllYLf8e71hHdohX-uQJScdJE";
         internal readonly GMapOverlay Objects = new GMapOverlay("objects");
+        internal readonly GMapOverlay Routes = new GMapOverlay("routes");
         private const int numVans = 6;
         private Van[] vans;
         private static List<Appointment> appointmentList = new List<Appointment>();
@@ -34,9 +37,12 @@ namespace MobileVaccination
         private void Mainform_Load(object sender, EventArgs e)
         {
             gMapControl1.MapProvider = GMap.NET.MapProviders.GoogleMapProvider.Instance;
+            GMap.NET.MapProviders.GoogleMapProvider.Instance.ApiKey = googleMapsApiKey;
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerOnly;
             gMapControl1.Position = new GMap.NET.PointLatLng(46.304302, -119.2752); //starting position for the map, currently set to Richland
             gMapControl1.Overlays.Add(Objects);
+            gMapControl1.Overlays.Add(Routes);
+            
         }
         
         private async void startButtonClick(object sender, EventArgs e)
@@ -49,10 +55,13 @@ namespace MobileVaccination
             //create the vans, we need 6 I think?
             vans = new Van[numVans];
             for (int i = 0; i < numVans; i++)
+            {
                 vans[i] = new Van();
+                vans[i].Vid = i.ToString();
+            }
 
             //this is how you add a marker to the map, you have to add the van's GMapMarker object to a GMapOverlay object,
-            vans[0].Position = new GMap.NET.PointLatLng(46.304302, -119.2752);
+            vans[0].Position = new GMap.NET.PointLatLng(46.333050, -119.283240);
             vans[0].PositionMarker.Position = vans[0].Position;
             Objects.Markers.Add(vans[0].PositionMarker);
 
@@ -72,6 +81,12 @@ namespace MobileVaccination
                 System.Diagnostics.Debug.WriteLine($"acepted: { appointmentList[i].acepted}");
                 System.Diagnostics.Debug.WriteLine($"vaccinated: { appointmentList[i].vaccinated}");
             }
+
+            //test AddRoute()
+            appointmentList[0].destination.lat = 46.251740;
+            appointmentList[0].destination.lon = -119.117540;
+            System.Diagnostics.Debug.WriteLine($"lat {appointmentList[0].destination.lat} lon {appointmentList[0].destination.lon}");
+            DisplayVanRoute(vans[0], appointmentList[0]);
         }
 
         private static async Task InitializeFirebase()
@@ -138,6 +153,45 @@ namespace MobileVaccination
 
 
 
+        }
+
+        private void DisplayVanRoute(Van van, Appointment appointment)
+        {
+            PointLatLng startPoint = van.Position;
+            PointLatLng endPoint = new PointLatLng(appointment.destination.lat, appointment.destination.lon);
+
+            //var rp = GMapProviders.OpenStreetMap as RoutingProvider;
+            var rp = gMapControl1.MapProvider as RoutingProvider;
+            
+            var route = rp.GetRoute(startPoint, endPoint, false, false, (int)gMapControl1.Zoom);
+
+            if(route != null)
+            {
+                System.Diagnostics.Debug.WriteLine("adding route");
+                // add route
+                var r = new GMapRoute(route.Points, route.Name);
+                r.IsHitTestVisible = true;
+                r.Stroke.Color = Color.Blue;
+                Routes.Routes.Add(r);
+
+                // add route start/end marks
+                GMapMarker m1 = new GMarkerGoogle(startPoint, GMarkerGoogleType.green_dot);
+                m1.ToolTipText = "Van " + van.Vid;
+                m1.ToolTipMode = MarkerTooltipMode.Always;
+
+                GMapMarker m2 = new GMarkerGoogle(endPoint, GMarkerGoogleType.red_dot);
+                m2.ToolTipText = "Appointment " + appointment.prospect.uid;
+                m2.ToolTipMode = MarkerTooltipMode.Always;
+
+                Objects.Markers.Add(m1);
+                Objects.Markers.Add(m2);
+
+                gMapControl1.ZoomAndCenterRoute(r);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("route was null");
+            }
         }
 
     }
