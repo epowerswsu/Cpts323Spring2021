@@ -58,6 +58,13 @@ namespace MobileVaccination.ClassDefinitions
         public int code { get; set; }
         public ServerTimeStamp time { get; } = new ServerTimeStamp();
     }
+
+    public class VanInfo//prototype to add van info
+    {
+        public int plate { get; set; }
+        public string id { get; set; }
+        public ServerTimeStamp time { get; } = new ServerTimeStamp();
+    }
     public class Response
     {
         public bool success;

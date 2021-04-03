@@ -16,7 +16,7 @@ using Firebase.Database;
 using System.Net.Http;
 using System.Reactive.Linq;
 using MobileVaccination.ClassDefinitions;
-
+using Firebase.Database.Query;//for firebase van adding
 
 namespace MobileVaccination
 {
@@ -59,6 +59,25 @@ namespace MobileVaccination
                 vans[i] = new Van();
                 vans[i].Vid = i.ToString();
             }
+
+            //this adds vans to our Firebase
+            System.Diagnostics.Debug.WriteLine("Clicked Start");
+
+            var client = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
+            HttpClient httpclient = new HttpClient();
+            
+
+            for (int j = 0; j < 6; j++)
+            {
+                var child = client.Child("Vans");
+                var vaninfo = new VanInfo
+                {
+                    plate = j,
+                    id = "Van" + j + j + j
+                };
+                await child.PostAsync(vaninfo);
+            }
+
 
             //this is how you add a marker to the map, you have to add the van's GMapMarker object to a GMapOverlay object,
             vans[0].Position = new GMap.NET.PointLatLng(46.333050, -119.283240);
