@@ -149,6 +149,20 @@ namespace MobileVaccination
                 appointmentList.Add(ap);
             }
 
+            //******************** Get Prospect list one by one real time ***************************/
+            var child = client.Child("appointments");
+            var observable = child.AsObservable<Appointment>();
+            //get a new appoinment in the list
+            var subscriptionFree = observable
+                .Where(f => !string.IsNullOrEmpty(f.Key)) // you get empty Key when there are no data on the server for specified node
+                .Where(f => f.Object?.acepted == false)
+                .Subscribe(appointment =>
+                {
+                    selectedkey = appointment.Key;
+                    Console.WriteLine($"New Appoinment:{appointment.Key}:->{appointment.Object.destination.destinationName}");// update the lits of appointsments.
+
+                });
+
             //next step is to subscribe our company/team name to his firebase
             //this will add our company to the database everytime it runs, so keep it commented out so you dont spam his firebase
             var company = new Company
