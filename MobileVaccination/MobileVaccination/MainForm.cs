@@ -67,8 +67,6 @@ namespace MobileVaccination
             vans[5].routeColor = Color.Red;
 
             //this adds vans to our Firebase
-            System.Diagnostics.Debug.WriteLine("Clicked Start");
-
             var client = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
             HttpClient httpclient = new HttpClient();
             
@@ -231,7 +229,7 @@ namespace MobileVaccination
                 Objects.Markers.Add(m1);
                 Objects.Markers.Add(m2);
 
-                gMapControl1.ZoomAndCenterRoute(r);
+                //gMapControl1.ZoomAndCenterRoute(r);  //this will focus the map view on the new route every time one is created, probably dont want this
             }
             else
             {
