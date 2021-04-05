@@ -21,12 +21,15 @@ namespace MobileVaccination.ClassDefinitions
         public int Vials;
         public string CarPlate;
         public string Vid;
+        public System.Drawing.Color routeColor;
         public Van()
         {
             Position.Lat = 0;
             Position.Lng = 0;
             PositionMarker = new GMarkerGoogle(this.Position, GMarkerGoogleType.orange_dot);
             Vials = 0;
+            //default routeColor (give each van a unique color after creating them)
+            routeColor = System.Drawing.Color.Blue;
         }
     }
 }

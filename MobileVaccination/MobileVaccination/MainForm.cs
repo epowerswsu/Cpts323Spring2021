@@ -59,6 +59,12 @@ namespace MobileVaccination
                 vans[i] = new Van();
                 vans[i].Vid = i.ToString();
             }
+            vans[0].routeColor = Color.Blue;
+            vans[1].routeColor = Color.ForestGreen;
+            vans[2].routeColor = Color.Pink;
+            vans[3].routeColor = Color.Black;
+            vans[4].routeColor = Color.Yellow;
+            vans[5].routeColor = Color.Red;
 
             //this adds vans to our Firebase
             System.Diagnostics.Debug.WriteLine("Clicked Start");
@@ -82,7 +88,7 @@ namespace MobileVaccination
             //this is how you add a marker to the map, you have to add the van's GMapMarker object to a GMapOverlay object,
             vans[0].Position = new GMap.NET.PointLatLng(46.333050, -119.283240);
             vans[0].PositionMarker.Position = vans[0].Position;
-            Objects.Markers.Add(vans[0].PositionMarker);
+            //Objects.Markers.Add(vans[0].PositionMarker);
 
             //this function uses async, so we have to use await to wait for it because it will do some stuff on different threads
             await InitializeFirebase();
@@ -101,11 +107,16 @@ namespace MobileVaccination
                 System.Diagnostics.Debug.WriteLine($"vaccinated: { appointmentList[i].vaccinated}");
             }
 
-            //test AddRoute()
+            //test AddRoute() use our own lat long for now
             appointmentList[0].destination.lat = 46.251740;
             appointmentList[0].destination.lon = -119.117540;
-            System.Diagnostics.Debug.WriteLine($"lat {appointmentList[0].destination.lat} lon {appointmentList[0].destination.lon}");
             DisplayVanRoute(vans[0], appointmentList[0]);
+
+            //add a second route just for fun
+            appointmentList[1].destination.lat = 46.225650;
+            appointmentList[1].destination.lon = -119.235250;
+            vans[1].Position = new GMap.NET.PointLatLng(46.222900, -119.218510);
+            DisplayVanRoute(vans[1], appointmentList[1]);
         }
 
         private static async Task InitializeFirebase()
@@ -204,7 +215,8 @@ namespace MobileVaccination
                 // add route
                 var r = new GMapRoute(route.Points, route.Name);
                 r.IsHitTestVisible = true;
-                r.Stroke.Color = Color.Blue;
+                r.Stroke.Color = van.routeColor;
+                r.Stroke = (Pen)r.Stroke.Clone();
                 Routes.Routes.Add(r);
 
                 // add route start/end marks
