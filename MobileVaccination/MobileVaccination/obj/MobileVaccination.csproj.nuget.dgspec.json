@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Owner\\Source\\Repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj": {}
+    "C:\\Users\\Owner\\source\\repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Owner\\Source\\Repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj": {
+    "C:\\Users\\Owner\\source\\repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Owner\\Source\\Repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj",
+        "projectUniqueName": "C:\\Users\\Owner\\source\\repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj",
         "projectName": "MobileVaccination",
-        "projectPath": "C:\\Users\\Owner\\Source\\Repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj",
+        "projectPath": "C:\\Users\\Owner\\source\\repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\MobileVaccination.csproj",
         "packagesPath": "C:\\Users\\Owner\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Owner\\Source\\Repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\obj\\",
+        "outputPath": "C:\\Users\\Owner\\source\\repos\\Cpts323Spring2021\\MobileVaccination\\MobileVaccination\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Owner\\AppData\\Roaming\\NuGet\\NuGet.Config",

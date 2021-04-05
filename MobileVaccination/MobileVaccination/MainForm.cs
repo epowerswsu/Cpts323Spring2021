@@ -227,5 +227,12 @@ namespace MobileVaccination
             }
         }
 
+        private void button2_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            MainInfo maininfo = new MainInfo();
+            maininfo.ShowDialog();
+            this.Show();
+        }
     }
 }
