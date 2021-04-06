@@ -24,10 +24,27 @@ namespace MobileVaccination
 
         private void button1_Click(object sender, EventArgs e)
         {
-            this.Hide();
-            Mainform mainform = new Mainform();
-            mainform.ShowDialog();
-            this.Close();
+            string PW;
+            PW = textBox4.Text;
+            string UN;
+            UN = textBox3.Text;
+
+            if (PW != "" && UN != "")
+            {
+                this.Hide();
+                Mainform mainform = new Mainform();
+                mainform.ShowDialog();
+                this.Close();
+            }
+            else
+            {
+                string WARN;
+                WARN = "Must enter all fields";
+                textBox5.Text = WARN;
+            }
+            
         }
+
+        
     }
 }

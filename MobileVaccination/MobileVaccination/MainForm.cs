@@ -229,6 +229,7 @@ namespace MobileVaccination
                 Objects.Markers.Add(m1);
                 Objects.Markers.Add(m2);
 
+                gMapControl1.ZoomAndCenterRoutes("routes");
                 //gMapControl1.ZoomAndCenterRoute(r);  //this will focus the map view on the new route every time one is created, probably dont want this
             }
             else
