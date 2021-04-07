@@ -98,21 +98,19 @@ namespace MobileVaccination
                 System.Diagnostics.Debug.WriteLine($"prospect.name: { appointmentList[i].prospect.FirstName}");
                 System.Diagnostics.Debug.WriteLine($"destinationName: { appointmentList[i].destination.destinationName}");
                 System.Diagnostics.Debug.WriteLine($"destination lat: { appointmentList[i].destination.lat}");
-                System.Diagnostics.Debug.WriteLine($"destination long: { appointmentList[i].destination.lon}");
+                System.Diagnostics.Debug.WriteLine($"destination long: { appointmentList[i].destination.lng}");
                 System.Diagnostics.Debug.WriteLine($"InitialTime: { appointmentList[i].InitialTime}");
                 System.Diagnostics.Debug.WriteLine($"active: { appointmentList[i].active}");
                 System.Diagnostics.Debug.WriteLine($"acepted: { appointmentList[i].acepted}");
                 System.Diagnostics.Debug.WriteLine($"vaccinated: { appointmentList[i].vaccinated}");
             }
 
-            //test AddRoute() use our own lat long for now
-            appointmentList[0].destination.lat = 46.251740;
-            appointmentList[0].destination.lon = -119.117540;
+            //test the function that adds route from van to appointment
             DisplayVanRoute(vans[0], appointmentList[0]);
 
-            //add a second route just for fun
+            //add a second route just for fun (using our won custom coordinates for testing)
             appointmentList[1].destination.lat = 46.225650;
-            appointmentList[1].destination.lon = -119.235250;
+            appointmentList[1].destination.lng = -119.235250;
             vans[1].Position = new GMap.NET.PointLatLng(46.222900, -119.218510);
             DisplayVanRoute(vans[1], appointmentList[1]);
         }
@@ -200,7 +198,7 @@ namespace MobileVaccination
         private void DisplayVanRoute(Van van, Appointment appointment)
         {
             PointLatLng startPoint = van.Position;
-            PointLatLng endPoint = new PointLatLng(appointment.destination.lat, appointment.destination.lon);
+            PointLatLng endPoint = new PointLatLng(appointment.destination.lat, appointment.destination.lng);
 
             //var rp = GMapProviders.OpenStreetMap as RoutingProvider;
             var rp = gMapControl1.MapProvider as RoutingProvider;

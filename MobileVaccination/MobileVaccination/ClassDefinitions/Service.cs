@@ -45,7 +45,7 @@ namespace MobileVaccination.ClassDefinitions
     public class Destination
     {
         public double lat;
-        public double lon;
+        public double lng;
         public string destinationName;
     }
     public class Company
