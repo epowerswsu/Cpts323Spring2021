@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using GMap.NET;
@@ -40,9 +41,8 @@ namespace MobileVaccination
             GMap.NET.MapProviders.GoogleMapProvider.Instance.ApiKey = googleMapsApiKey;
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerOnly;
             gMapControl1.Position = new GMap.NET.PointLatLng(46.304302, -119.2752); //starting position for the map, currently set to Richland
-            gMapControl1.Overlays.Add(Objects);
             gMapControl1.Overlays.Add(Routes);
-            
+            gMapControl1.Overlays.Add(Objects);
         }
         
         private async void startButtonClick(object sender, EventArgs e)
@@ -82,12 +82,6 @@ namespace MobileVaccination
                 await child.PostAsync(vaninfo);
             }
 
-
-            //this is how you add a marker to the map, you have to add the van's GMapMarker object to a GMapOverlay object,
-            vans[0].Position = new GMap.NET.PointLatLng(46.333050, -119.283240);
-            vans[0].PositionMarker.Position = vans[0].Position;
-            //Objects.Markers.Add(vans[0].PositionMarker);
-
             //this function uses async, so we have to use await to wait for it because it will do some stuff on different threads
             await InitializeFirebase();
 
@@ -106,6 +100,7 @@ namespace MobileVaccination
             }
 
             //test the function that adds route from van to appointment
+            vans[0].Position = new GMap.NET.PointLatLng(46.333050, -119.283240);
             DisplayVanRoute(vans[0], appointmentList[0]);
 
             //add a second route just for fun (using our won custom coordinates for testing)
@@ -113,6 +108,10 @@ namespace MobileVaccination
             appointmentList[1].destination.lng = -119.235250;
             vans[1].Position = new GMap.NET.PointLatLng(46.222900, -119.218510);
             DisplayVanRoute(vans[1], appointmentList[1]);
+
+            //move a van, updating its postion every few seconds
+            TravelToDestination(vans[0], appointmentList[0]);
+
         }
 
         private static async Task InitializeFirebase()
@@ -215,25 +214,46 @@ namespace MobileVaccination
                 r.Stroke = (Pen)r.Stroke.Clone();
                 Routes.Routes.Add(r);
 
+                //set the van's route to be this route, so we can move the van from point to point later
+                van.route = route;
+
                 // add route start/end marks
-                GMapMarker m1 = new GMarkerGoogle(startPoint, GMarkerGoogleType.green_dot);
-                m1.ToolTipText = "Van " + van.Vid;
-                m1.ToolTipMode = MarkerTooltipMode.Always;
+                //use the van's position marker
+                Objects.Markers.Remove(van.PositionMarker);     //remove the old marker
+                van.PositionMarker = new GMarkerGoogle(startPoint, GMarkerGoogleType.green_dot);
+                van.PositionMarker.ToolTipText = "Van " + van.Vid;
+                van.PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
 
                 GMapMarker m2 = new GMarkerGoogle(endPoint, GMarkerGoogleType.red_dot);
                 m2.ToolTipText = "Appointment " + appointment.prospect.uid;
                 m2.ToolTipMode = MarkerTooltipMode.Always;
 
-                Objects.Markers.Add(m1);
+                Objects.Markers.Add(van.PositionMarker);
                 Objects.Markers.Add(m2);
 
                 gMapControl1.ZoomAndCenterRoutes("routes");
-                //gMapControl1.ZoomAndCenterRoute(r);  //this will focus the map view on the new route every time one is created, probably dont want this
             }
             else
             {
                 System.Diagnostics.Debug.WriteLine("route was null");
             }
+        }
+
+        private void TravelToDestination(Van van, Appointment appointment)
+        {
+
+            DisplayVanRoute(van, appointment);  //initial call so the van has a route to start with, this cannot be in the van's own thread cause it uses the form's overlay
+            //every thing in here runs in its own thread so it doesn't freeze up the Mainform's thread
+            Thread t = new Thread(() =>
+            {
+                for (int i = 0; i < van.route.Points.Count; i++)
+                {
+                    Thread.Sleep(1000);    //after a few seconds the postion is updated
+                    van.Position = van.route.Points[i]; //move to next point in point list
+                    van.PositionMarker.Position = van.Position;  //move the marker's position also
+                }
+            });
+            t.Start();
         }
 
         private void button2_Click(object sender, EventArgs e)

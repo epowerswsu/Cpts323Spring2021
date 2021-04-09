@@ -22,11 +22,14 @@ namespace MobileVaccination.ClassDefinitions
         public string CarPlate;
         public string Vid;
         public System.Drawing.Color routeColor;
+        public GMap.NET.MapRoute route;
         public Van()
         {
             Position.Lat = 0;
             Position.Lng = 0;
-            PositionMarker = new GMarkerGoogle(this.Position, GMarkerGoogleType.orange_dot);
+            PositionMarker = new GMarkerGoogle(Position, GMarkerGoogleType.green_dot);
+            PositionMarker.ToolTipText = "Van " + Vid;
+            PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
             Vials = 0;
             //default routeColor (give each van a unique color after creating them)
             routeColor = System.Drawing.Color.Blue;
