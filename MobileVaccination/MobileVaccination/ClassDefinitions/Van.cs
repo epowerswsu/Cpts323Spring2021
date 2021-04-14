@@ -19,6 +19,9 @@ namespace MobileVaccination.ClassDefinitions
         public string Make;
         public string Model;
         public int Vials;
+        public double TimeSinceRefill;
+        public bool HasAppointment;
+        public Appointment appointment;
         public string CarPlate;
         public string Vid;
         public System.Drawing.Color routeColor;
@@ -28,9 +31,12 @@ namespace MobileVaccination.ClassDefinitions
             Position.Lat = 0;
             Position.Lng = 0;
             PositionMarker = new GMarkerGoogle(Position, GMarkerGoogleType.green_dot);
-            PositionMarker.ToolTipText = "Van " + Vid;
+            PositionMarker.ToolTipText = Vid;
             PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
             Vials = 0;
+            TimeSinceRefill = 0.0;
+            HasAppointment = false;
+            appointment = null;
             //default routeColor (give each van a unique color after creating them)
             routeColor = System.Drawing.Color.Blue;
         }
