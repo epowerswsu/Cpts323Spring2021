@@ -21,6 +21,7 @@ namespace MobileVaccination.ClassDefinitions
         public int Vials;
         public double TimeSinceRefill;
         public bool HasAppointment;
+        public bool HasRoute;
         public Appointment appointment;
         public string CarPlate;
         public string Vid;
@@ -36,6 +37,7 @@ namespace MobileVaccination.ClassDefinitions
             Vials = 0;
             TimeSinceRefill = 0.0;
             HasAppointment = false;
+            HasRoute = false;
             appointment = null;
             //default routeColor (give each van a unique color after creating them)
             routeColor = System.Drawing.Color.Blue;

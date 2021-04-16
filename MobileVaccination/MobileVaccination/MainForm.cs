@@ -31,7 +31,8 @@ namespace MobileVaccination
         private static List<Appointment> appointmentList = new List<Appointment>();
         public static PointLatLng refillLocation = new PointLatLng(46.280682, -119.290833);  //refill location currently unknown, using Kadlec for now
         private static Mutex mutex = new Mutex(); //mutex needed to prevent multiple threads from modifying the appointment list or van list at the same time
-        private Thread mainThread = Thread.CurrentThread;
+        public delegate void DisplayVanRoutes();
+        public DisplayVanRoutes displayRoutesDelegate;
 
         public Mainform()
         {
@@ -46,6 +47,7 @@ namespace MobileVaccination
             gMapControl1.Position = new GMap.NET.PointLatLng(46.304302, -119.2752); //starting position for the map, currently set to Richland
             gMapControl1.Overlays.Add(Routes);
             gMapControl1.Overlays.Add(Objects);
+            displayRoutesDelegate = new DisplayVanRoutes(DisplayVanRoutesMethod);
         }
 
         private async void centerScreenButton(object sender, EventArgs e)
@@ -195,7 +197,7 @@ namespace MobileVaccination
                         }
                     }
                     mutex.ReleaseMutex();
-                    Thread.Sleep(5000); //wait for a few seconds before checking the vans again
+                    Thread.Sleep(20000); //wait for a few seconds before checking the vans again, so this doesnt hog the mutex
                 }
                 System.Diagnostics.Debug.WriteLine("Finished Simulation");
             });
@@ -309,51 +311,61 @@ namespace MobileVaccination
             }
         }
 
-        private void DisplayVanRoute(Van van, Appointment appointment)
+        public void DisplayVanRoutesMethod()
         {
-            gMapControl1.HoldInvalidation = true;
+            //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
+            mutex.WaitOne();
 
-            PointLatLng startPoint = van.Position;
-            PointLatLng endPoint = new PointLatLng(appointment.destination.lat, appointment.destination.lng);
-
-            var rp = gMapControl1.MapProvider as RoutingProvider;
-            
-            var route = rp.GetRoute(startPoint, endPoint, false, false, (int)gMapControl1.Zoom);
-
-            if(route != null)
+            for(int i = 0; i < numVans; i++)
             {
-                System.Diagnostics.Debug.WriteLine("adding route");
-                // add route
-                var r = new GMapRoute(route.Points, route.Name);
-                r.IsHitTestVisible = true;
-                r.Stroke.Color = van.routeColor;
-                r.Stroke = (Pen)r.Stroke.Clone();
-                Routes.Routes.Add(r);
-                //set the van's route to be this route, so we can move the van from point to point later
-                van.route = route;
+                var van = vans[i];
+                if(van.HasAppointment == true && van.HasRoute == false)
+                {
+                    var appointment = van.appointment;
+                    van.HasRoute = true;
 
-                // add route start/end marks
-                //use the van's position marker
-                Objects.Markers.Remove(van.PositionMarker);     //remove the old marker
-                van.PositionMarker = new GMarkerGoogle(startPoint, GMarkerGoogleType.green_dot);
-                van.PositionMarker.ToolTipText = "Van " + van.Vid;
-                van.PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
+                    PointLatLng startPoint = van.Position;
+                    PointLatLng endPoint = new PointLatLng(appointment.destination.lat, appointment.destination.lng);
 
-                GMapMarker m2 = new GMarkerGoogle(endPoint, GMarkerGoogleType.red_dot);
-                m2.ToolTipText = "Appointment " + appointment.prospect.uid;
-                m2.ToolTipMode = MarkerTooltipMode.Always;
+                    var rp = gMapControl1.MapProvider as RoutingProvider;
 
-                Objects.Markers.Add(van.PositionMarker);
-                Objects.Markers.Add(m2);
+                    var route = rp.GetRoute(startPoint, endPoint, false, false, (int)gMapControl1.Zoom);
 
-                //gMapControl1.ZoomAndCenterRoutes("routes"); //this function will be made into a button because it was causing issues when its called on other threads
+                    if (route != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine("adding route");
+                        // add route
+                        var r = new GMapRoute(route.Points, route.Name);
+                        r.IsHitTestVisible = true;
+                        r.Stroke.Color = van.routeColor;
+                        r.Stroke = (Pen)r.Stroke.Clone();
+                        Routes.Routes.Add(r);
+                        //set the van's route to be this route, so we can move the van from point to point later
+                        van.route = route;
+
+                        // add route start/end marks
+                        //use the van's position marker
+                        Objects.Markers.Remove(van.PositionMarker);     //remove the old marker
+                        van.PositionMarker = new GMarkerGoogle(startPoint, GMarkerGoogleType.green_dot);
+                        van.PositionMarker.ToolTipText = van.Vid;
+                        van.PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
+
+                        GMapMarker m2 = new GMarkerGoogle(endPoint, GMarkerGoogleType.red_dot);
+                        m2.ToolTipText = "Appointment " + appointment.prospect.uid;
+                        m2.ToolTipMode = MarkerTooltipMode.Always;
+
+                        Objects.Markers.Add(van.PositionMarker);
+                        Objects.Markers.Add(m2);
+
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("route was null");
+                    }
+                }
             }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("route was null");
-            }
 
-            gMapControl1.HoldInvalidation = false;
+            mutex.ReleaseMutex();
         }
 
         private void TravelToDestination(Van van, Appointment appointment)
@@ -362,9 +374,9 @@ namespace MobileVaccination
             //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
             Thread t = new Thread(() =>
             {
-                mutex.WaitOne();
-                DisplayVanRoute(van, appointment);
-                mutex.ReleaseMutex();
+                //DisplayVanRoute(van, appointment);
+                Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
+
 
                 for (int i = 0; i < van.route.Points.Count; i++)
                 {
@@ -381,6 +393,7 @@ namespace MobileVaccination
                 appointment.vaccinated = "true";
                 appointment.active = "false";
                 van.HasAppointment = false;
+                van.HasRoute = false;
                 System.Diagnostics.Debug.WriteLine($"Van {van.Vid} finished appointment {appointment.prospect.uid}");
                 mutex.ReleaseMutex();
             });
