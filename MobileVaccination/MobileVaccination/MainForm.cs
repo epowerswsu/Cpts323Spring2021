@@ -135,7 +135,7 @@ namespace MobileVaccination
 
         private void startSimulation()
         {
-            double expireTime = 7.0; //7 hours?
+            double expireTime = 6.0; //6 hours?
             var startTime = DateTime.UtcNow;
             int simulationTime = 3; //run for this many minutes
 
@@ -159,7 +159,7 @@ namespace MobileVaccination
                                 vans[i].HasAppointment = true;
 
                                 //for now just fake it
-                                vans[i].Vials = 7;
+                                vans[i].Vials = 6;
                                 vans[i].TimeSinceRefill = 0.0;
 
                                 vans[i].HasAppointment = false;
@@ -294,7 +294,7 @@ namespace MobileVaccination
                     Position = refillLocation,
                     Vid = "Van " + i,
                     CarPlate = rand.Next(100000, 999999).ToString(), //use a random number for the plate
-                    Vials = 7  //whats the max vials a van can hold at a time?
+                    Vials = 6  //whats the max vials a van can hold at a time?
                 };
                 vans.Add(van);
             }
