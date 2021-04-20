@@ -33,6 +33,7 @@ namespace MobileVaccination
         private static Mutex mutex = new Mutex(); //mutex needed to prevent multiple threads from modifying the appointment list or van list at the same time
         public delegate void DisplayVanRoutes();
         public DisplayVanRoutes displayRoutesDelegate;
+        public static FirebaseClient client, client2;
 
         public Mainform()
         {
@@ -68,6 +69,7 @@ namespace MobileVaccination
             for(int i = 0; i < appointmentList.Count; i++)
             {
                 System.Diagnostics.Debug.WriteLine($"appointment# {i}");
+                System.Diagnostics.Debug.WriteLine($"key: {appointmentList[i].key}");
                 System.Diagnostics.Debug.WriteLine($"prospect.name: { appointmentList[i].prospect.FirstName}");
                 System.Diagnostics.Debug.WriteLine($"destinationName: { appointmentList[i].destination.destinationName}");
                 System.Diagnostics.Debug.WriteLine($"destination lat: { appointmentList[i].destination.lat}");
@@ -196,6 +198,7 @@ namespace MobileVaccination
                             }
                         }
                     }
+                    UpdateVansInFirebase(); //update the vans in our firebase
                     mutex.ReleaseMutex();
                     Thread.Sleep(20000); //wait for a few seconds before checking the vans again, so this doesnt hog the mutex
                 }
@@ -212,7 +215,7 @@ namespace MobileVaccination
             System.Diagnostics.Debug.WriteLine("ENTER InitializeFirebase");
 
             //******************** Initialization ***************************//
-            var client = new FirebaseClient("https://cpts323battle.firebaseio.com/");
+            client = new FirebaseClient("https://cpts323battle.firebaseio.com/");
             HttpClient httpclient = new HttpClient();
             string selectedkey = "", responseString, companyId;
             FormUrlEncodedContent content;
@@ -240,6 +243,7 @@ namespace MobileVaccination
                     acepted = appointment.Object.acepted,
                     vaccinated = appointment.Object.vaccinated,
                     active = appointment.Object.active,
+                    key = appointment.Key,
                 };
 
                 appointmentList.Add(ap);
@@ -302,12 +306,13 @@ namespace MobileVaccination
             vans[5].routeColor = Color.Red;
 
             //this part adds the newly created vans to our firebase
-            var client2 = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
+            client2 = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
             HttpClient httpclient2 = new HttpClient();
             for (int i = 0; i < numVans; i++)
             {
                 var child2 = client2.Child("Vans");
-                await child2.PostAsync(vans[i]);
+                var fbVan = await child2.PostAsync(vans[i]);
+                vans[i].key = fbVan.Key;
             }
         }
 
@@ -394,6 +399,7 @@ namespace MobileVaccination
                 appointment.active = "false";
                 van.HasAppointment = false;
                 van.HasRoute = false;
+                van.Vials--;
                 System.Diagnostics.Debug.WriteLine($"Van {van.Vid} finished appointment {appointment.prospect.uid}");
                 mutex.ReleaseMutex();
             });
@@ -406,6 +412,18 @@ namespace MobileVaccination
             MainInfo maininfo = new MainInfo();
             maininfo.ShowDialog();
             this.Show();
+        }
+
+        private static async Task UpdateVansInFirebase()
+        {
+            //update the vans in our firebase to match the actual vans in our simulation
+            foreach (Van van in vans) //foreach creates and uses a copy of the vans list, doesnt use the real list
+            {
+                System.Diagnostics.Debug.WriteLine($"updating key: {van.key}");
+                var child = client2.Child("/Vans/" + van.key + "/");
+                await child.PutAsync(van);
+            }
+
         }
     }
 }

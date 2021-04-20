@@ -27,6 +27,7 @@ namespace MobileVaccination.ClassDefinitions
         public string Vid;
         public System.Drawing.Color routeColor;
         public GMap.NET.MapRoute route;
+        public string key;
         public Van()
         {
             Position.Lat = 0;

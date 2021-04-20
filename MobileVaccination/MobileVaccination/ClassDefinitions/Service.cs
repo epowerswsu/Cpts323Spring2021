@@ -15,7 +15,8 @@ namespace MobileVaccination.ClassDefinitions
         public string vaccinated { get; set; }
         public string active { get; set; }
 
-        public int key { get; set; }
+        //public int key { get; set; }
+        public string key { get; set; }
 
     }
 
