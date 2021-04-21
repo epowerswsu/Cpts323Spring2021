@@ -34,7 +34,7 @@ namespace MobileVaccination
         public delegate void DisplayVanRoutes();
         public DisplayVanRoutes displayRoutesDelegate;
         public static FirebaseClient client, client2;
-
+        public int VaccCount = 0;
         public Mainform()
         {
             InitializeComponent();
@@ -66,7 +66,7 @@ namespace MobileVaccination
             await InitializeFirebase();
 
             //test that the appointmentList actually contains appointments
-            for(int i = 0; i < appointmentList.Count; i++)
+            for (int i = 0; i < appointmentList.Count; i++)
             {
                 System.Diagnostics.Debug.WriteLine($"appointment# {i}");
                 System.Diagnostics.Debug.WriteLine($"key: {appointmentList[i].key}");
@@ -102,8 +102,8 @@ namespace MobileVaccination
             appointmentList.Add(new Appointment()
             {
                 acepted = false,
-                destination = new Destination() {lat = 46.272040, lng = -119.187530 },
-                prospect = new Patient() {uid = 2 }
+                destination = new Destination() { lat = 46.272040, lng = -119.187530 },
+                prospect = new Patient() { uid = 2 }
             });
             appointmentList.Add(new Appointment()
             {
@@ -287,7 +287,7 @@ namespace MobileVaccination
             //next step is to create our vans and add them to our firebase
             //first create the local Van objects and add them to the "vans" list
             Random rand = new Random();
-            for(int i = 0; i < numVans; i++)
+            for (int i = 0; i < numVans; i++)
             {
                 Van van = new Van
                 {
@@ -321,10 +321,10 @@ namespace MobileVaccination
             //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
             mutex.WaitOne();
 
-            for(int i = 0; i < numVans; i++)
+            for (int i = 0; i < numVans; i++)
             {
                 var van = vans[i];
-                if(van.HasAppointment == true && van.HasRoute == false)
+                if (van.HasAppointment == true && van.HasRoute == false)
                 {
                     var appointment = van.appointment;
                     van.HasRoute = true;
@@ -390,6 +390,7 @@ namespace MobileVaccination
                     mutex.WaitOne();
                     van.Position = van.route.Points[i]; //move to next point in point list
                     van.PositionMarker.Position = van.Position;  //move the marker's position also
+                    UpdateVan(van); //could make this await, but small delay is not important
                     mutex.ReleaseMutex();
                 }
 
@@ -401,6 +402,10 @@ namespace MobileVaccination
                 van.HasRoute = false;
                 van.Vials--;
                 System.Diagnostics.Debug.WriteLine($"Van {van.Vid} finished appointment {appointment.prospect.uid}");
+                VaccCount++;
+
+                //update main screen
+                _ = textBox1.Invoke(new Action(() => textBox1.Text = VaccCount.ToString()));
                 mutex.ReleaseMutex();
             });
             t.Start();
@@ -423,6 +428,16 @@ namespace MobileVaccination
                 var child = client2.Child("/Vans/" + van.key + "/");
                 await child.PutAsync(van);
             }
+
+        }
+
+        //updates individual vans to FB. could eventually report to Torre's FB too
+        private static async Task UpdateVan(Van van)
+        {
+            //uncomment following line to see if successful
+            //System.Diagnostics.Debug.WriteLine($"updating key SOLO: {van.key}");
+            var child = client2.Child("/Vans/" + van.key + "/");
+            await child.PutAsync(van);
 
         }
     }
