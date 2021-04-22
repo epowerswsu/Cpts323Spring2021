@@ -8,14 +8,18 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MobileVaccination.ClassDefinitions;
+using Firebase.Database;
+using Firebase.Database.Query;
+using System.Threading;
 
 namespace MobileVaccination
 {
     public partial class MainInfo : Form
     {
         private static List<Van> vanList = new List<Van>();
-        private int currentVanIndex;
-        private int numVans;
+        private static int currentVanIndex;
+        public static FirebaseClient client;
+        private static Mutex mutex = new Mutex();
 
         public MainInfo()
         {
@@ -31,35 +35,22 @@ namespace MobileVaccination
         {
             //switch to the next van in the vanList
             currentVanIndex++;
-            if(currentVanIndex == numVans)
+            if(currentVanIndex == vanList.Count)
             {
                 currentVanIndex = 0;
             }
 
-            displayVanInfo(vanList[currentVanIndex]);
+            displayVanInfo();
         }
 
-        private void MainInfo_Load(object sender, EventArgs e)
+        private async void MainInfo_Load(object sender, EventArgs e)
         {
-            
             //here we want to get a list of vans from firebase, they should have been created at this point assuming the simulation has started
-            //for now we will just create some vans (replace later with a function call that reads the vans from firebase and fills the list)
-            for (int i = 0; i < 6; i++)
-            {
-                Van v = new Van()
-                {
-                    Position = new GMap.NET.PointLatLng(46.333050 + i, -119.283240 + i), //add i just so they have different positions for testing purposes
-                    Vid = i.ToString(),
-                    Vials = i * 2
-                };
-                vanList.Add(v);
-            }
-
+            await InitializeFirebaseConnetion();
 
             //after firebase function call display data for the first van
             currentVanIndex = 0;
-            numVans = vanList.Count();
-            displayVanInfo(vanList[currentVanIndex]);
+            displayVanInfo();
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
@@ -67,8 +58,11 @@ namespace MobileVaccination
 
         }
 
-        private void displayVanInfo(Van van)
+        private void displayVanInfo()
         {
+            mutex.WaitOne();
+            //System.Diagnostics.Debug.WriteLine("HEY");
+            Van van = vanList[currentVanIndex];
             //My idea is that the user will press a button to cycle through the different vans
             //this function will update the MainInfo form to display info on the current van
             richTextBox1.Text = "Van ID: " + van.Vid;
@@ -76,6 +70,7 @@ namespace MobileVaccination
             richTextBox3.Text = "Longitude: " + van.Position.Lng.ToString();
             richTextBox4.Text = "Number of Vials: " + van.Vials;
 
+            mutex.ReleaseMutex();
         }
 
         private void richTextBox3_TextChanged(object sender, EventArgs e)
@@ -86,6 +81,54 @@ namespace MobileVaccination
         private void richTextBox2_TextChanged(object sender, EventArgs e)
         {
 
+        }
+
+        private static async Task InitializeFirebaseConnetion()
+        {
+            client = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
+
+            var Vans = await client
+               .Child("Vans")//Prospect list
+               .OnceAsync<Van>();
+            foreach (var van in Vans)
+            {
+                System.Diagnostics.Debug.WriteLine($"MainInfo: adding van key {van.Key}");
+                vanList.Add(van.Object);
+            }
+
+            //this next part will update our vanList eveytime a change is made to Vans in our firebase (I think)
+            bool isNew;
+            int len = vanList.Count;
+            var child = client.Child("Vans");
+            var observable = child.AsObservable<Van>();
+            var subscriptionFree = observable
+                .Subscribe(van =>
+                {
+                    if (van.EventType == Firebase.Database.Streaming.FirebaseEventType.InsertOrUpdate)
+                    {
+                        mutex.WaitOne();
+                        //System.Diagnostics.Debug.WriteLine($"Updating vanList in MainInfo");
+
+                        isNew = true;
+                        for (int i = 0; i < len; i++)
+                        {
+                            if (van.Key == vanList[i].key)
+                            {
+                                //van is already in our list so update it
+                                vanList[i] = van.Object;
+
+                                isNew = false;
+                                i = len;
+                            }
+                        }
+                        if (isNew == true)
+                        {
+                            //this van was not found in our list so add it to our list
+                            vanList.Add(van.Object);
+                        }
+                        mutex.ReleaseMutex();
+                    }
+                });
         }
     }
 }

@@ -233,7 +233,6 @@ namespace MobileVaccination
                 selectedkey = appointment.Key;
 
                 //create Appointment object, set all of its memebers, and add it to the appointmentList
-                //later we should probably change so it only adds appointments that are not already accepted
                 Appointment ap = new Appointment()
                 {
                     prospect = appointment.Object.prospect,
@@ -249,19 +248,8 @@ namespace MobileVaccination
                 appointmentList.Add(ap);
             }
 
-            //******************** Get Prospect list one by one real time ***************************/
-            var child = client.Child("appointments");
-            var observable = child.AsObservable<Appointment>();
-            //get a new appoinment in the list
-            var subscriptionFree = observable
-                .Where(f => !string.IsNullOrEmpty(f.Key)) // you get empty Key when there are no data on the server for specified node
-                .Where(f => f.Object?.acepted == false)
-                .Subscribe(appointment =>
-                {
-                    selectedkey = appointment.Key;
-                    Console.WriteLine($"New Appoinment:{appointment.Key}:->{appointment.Object.destination.destinationName}");// update the lits of appointsments.
-
-                });
+            //make an observer for the appointments in his firebase, when they are changed this should automatically detect it
+            SubscribeToAppointmentListChanges();
 
             //next step is to subscribe our company/team name to his firebase
             //this will add our company to the database everytime it runs, so keep it commented out so you dont spam his firebase
@@ -379,9 +367,7 @@ namespace MobileVaccination
             //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
             Thread t = new Thread(() =>
             {
-                //DisplayVanRoute(van, appointment);
                 Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
-
 
                 for (int i = 0; i < van.route.Points.Count; i++)
                 {
@@ -424,7 +410,7 @@ namespace MobileVaccination
             //update the vans in our firebase to match the actual vans in our simulation
             foreach (Van van in vans) //foreach creates and uses a copy of the vans list, doesnt use the real list
             {
-                System.Diagnostics.Debug.WriteLine($"updating key: {van.key}");
+                //System.Diagnostics.Debug.WriteLine($"updating key: {van.key}");
                 var child = client2.Child("/Vans/" + van.key + "/");
                 await child.PutAsync(van);
             }
@@ -439,6 +425,63 @@ namespace MobileVaccination
             var child = client2.Child("/Vans/" + van.key + "/");
             await child.PutAsync(van);
 
+        }
+
+        private static void SubscribeToAppointmentListChanges()
+        {
+            //constantly checks for appointment changes in his firebase, function only needs to be called once i think
+            bool isNew;
+            int len = appointmentList.Count;
+            var child = client.Child("appointments");
+            var observable = child.AsObservable<Appointment>();
+            var subscriptionFree = observable
+                .Where(f => !string.IsNullOrEmpty(f.Key)) // you get empty Key when there are no data on the server for specified node
+                .Where(f => f.Object?.acepted == false)
+                .Subscribe(appointment =>
+                {
+                    if (appointment.EventType == Firebase.Database.Streaming.FirebaseEventType.InsertOrUpdate)
+                    {
+                        Console.WriteLine($"Updating appointmentList:{appointment.Key}:->{appointment.Object.destination.destinationName}");
+
+                        isNew = true;
+                        for (int i = 0; i < len; i++)
+                        {
+                            if (appointment.Key == appointmentList[i].key)
+                            {
+                                //for appointments that are already in our list, update them by reading from the firebase
+                                System.Diagnostics.Debug.WriteLine($"updating appointment {appointment.Key} in our list");
+                                appointmentList[i].prospect = appointment.Object.prospect;
+                                appointmentList[i].destination = appointment.Object.destination;
+                                appointmentList[i].pointList = appointment.Object.pointList;
+                                appointmentList[i].InitialTime = appointment.Object.InitialTime;
+                                appointmentList[i].acepted = appointment.Object.acepted;
+                                appointmentList[i].vaccinated = appointment.Object.vaccinated;
+                                appointmentList[i].active = appointment.Object.active;
+                                appointmentList[i].key = appointment.Key;
+
+                                isNew = false;
+                                i = len;
+                            }
+                        }
+                        if (isNew == true)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"adding new appointment {appointment.Key} to our list");
+                            //this appointment was not found in our list so add it to our list
+                            Appointment ap = new Appointment()
+                            {
+                                prospect = appointment.Object.prospect,
+                                destination = appointment.Object.destination,
+                                pointList = appointment.Object.pointList,
+                                InitialTime = appointment.Object.InitialTime,
+                                acepted = appointment.Object.acepted,
+                                vaccinated = appointment.Object.vaccinated,
+                                active = appointment.Object.active,
+                                key = appointment.Key,
+                            };
+                            appointmentList.Add(ap);
+                        }
+                    }
+                });
         }
     }
 }
