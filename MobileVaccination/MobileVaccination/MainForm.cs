@@ -54,6 +54,7 @@ namespace MobileVaccination
         private async void centerScreenButton(object sender, EventArgs e)
         {
             gMapControl1.ZoomAndCenterRoutes("routes");
+            
         }
 
         private async void startButtonClick(object sender, EventArgs e)
@@ -372,11 +373,19 @@ namespace MobileVaccination
                 for (int i = 0; i < van.route.Points.Count; i++)
                 {
                     Thread.Sleep(1000);    //after a few seconds the postion is updated
+                    
+                    
+                    //makes sense to do calcs here
+                    double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng);
+                    //just for proof of concept, printing to Tbox
+                    textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
+
 
                     mutex.WaitOne();
                     van.Position = van.route.Points[i]; //move to next point in point list
                     van.PositionMarker.Position = van.Position;  //move the marker's position also
                     UpdateVan(van); //could make this await, but small delay is not important
+
                     mutex.ReleaseMutex();
                 }
 
@@ -426,6 +435,24 @@ namespace MobileVaccination
             await child.PutAsync(van);
 
         }
+
+        public static double DistanceTo(double lat1, double lon1, double lat2, double lon2)
+        {
+            double rlat1 = Math.PI * lat1 / 180;
+            double rlat2 = Math.PI * lat2 / 180;
+            double theta = lon1 - lon2;
+            double rtheta = Math.PI * theta / 180;
+            double dist =
+                Math.Sin(rlat1) * Math.Sin(rlat2) + Math.Cos(rlat1) *
+                Math.Cos(rlat2) * Math.Cos(rtheta);
+            dist = Math.Acos(dist);
+            dist = dist * 180 / Math.PI;
+            dist = dist * 60 * 1.1515;
+
+            return dist;
+        }
+
+
 
         private static void SubscribeToAppointmentListChanges()
         {

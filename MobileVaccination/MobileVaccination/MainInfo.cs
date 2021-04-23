@@ -50,7 +50,8 @@ namespace MobileVaccination
 
             //after firebase function call display data for the first van
             currentVanIndex = 0;
-            displayVanInfo();
+            
+            
         }
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
@@ -129,6 +130,11 @@ namespace MobileVaccination
                         mutex.ReleaseMutex();
                     }
                 });
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            displayVanInfo();
         }
     }
 }
