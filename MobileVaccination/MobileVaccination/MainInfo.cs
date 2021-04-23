@@ -86,50 +86,56 @@ namespace MobileVaccination
 
         private static async Task InitializeFirebaseConnetion()
         {
-            client = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
-
-            var Vans = await client
-               .Child("Vans")//Prospect list
-               .OnceAsync<Van>();
-            foreach (var van in Vans)
+            if (vanList.Count == 0)
             {
-                System.Diagnostics.Debug.WriteLine($"MainInfo: adding van key {van.Key}");
-                vanList.Add(van.Object);
-            }
+                mutex.WaitOne();
+                System.Diagnostics.Debug.WriteLine("HEREREREREREREREER");
+                client = new FirebaseClient("https://proj-109d4-default-rtdb.firebaseio.com/");
 
-            //this next part will update our vanList eveytime a change is made to Vans in our firebase (I think)
-            bool isNew;
-            int len = vanList.Count;
-            var child = client.Child("Vans");
-            var observable = child.AsObservable<Van>();
-            var subscriptionFree = observable
-                .Subscribe(van =>
+                var Vans = await client
+                   .Child("Vans")//Prospect list
+                   .OnceAsync<Van>();
+                foreach (var van in Vans)
                 {
-                    if (van.EventType == Firebase.Database.Streaming.FirebaseEventType.InsertOrUpdate)
+                    System.Diagnostics.Debug.WriteLine($"MainInfo: adding van key {van.Key}");
+                    vanList.Add(van.Object);
+                }
+                mutex.ReleaseMutex();
+
+                //this next part will update our vanList eveytime a change is made to Vans in our firebase (I think)
+                bool isNew;
+                int len = vanList.Count;
+                var child = client.Child("Vans");
+                var observable = child.AsObservable<Van>();
+                var subscriptionFree = observable
+                    .Subscribe(van =>
                     {
-                        mutex.WaitOne();
-                        //System.Diagnostics.Debug.WriteLine($"Updating vanList in MainInfo");
-
-                        isNew = true;
-                        for (int i = 0; i < len; i++)
+                        if (van.EventType == Firebase.Database.Streaming.FirebaseEventType.InsertOrUpdate)
                         {
-                            if (van.Key == vanList[i].key)
+                            mutex.WaitOne();
+                            //System.Diagnostics.Debug.WriteLine($"Updating vanList in MainInfo");
+
+                            isNew = true;
+                            for (int i = 0; i < len; i++)
                             {
-                                //van is already in our list so update it
-                                vanList[i] = van.Object;
+                                if (van.Key == vanList[i].key)
+                                {
+                                    //van is already in our list so update it
+                                    vanList[i] = van.Object;
 
-                                isNew = false;
-                                i = len;
+                                    isNew = false;
+                                    i = len;
+                                }
                             }
+                            if (isNew == true)
+                            {
+                                //this van was not found in our list so add it to our list
+                                vanList.Add(van.Object);
+                            }
+                            mutex.ReleaseMutex();
                         }
-                        if (isNew == true)
-                        {
-                            //this van was not found in our list so add it to our list
-                            vanList.Add(van.Object);
-                        }
-                        mutex.ReleaseMutex();
-                    }
-                });
+                    });
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)
