@@ -520,27 +520,29 @@ namespace MobileVaccination
 
         private async Task SelectAppointment(Appointment appointment, Van van)
         {
-            //write to his firebase to accept an appointment
+            //use this firebase function to accept an appointment
             HttpClient httpclient = new HttpClient();
 
             //******************* call cloud function select a appointment by id ****************/
             var dictionary = new Dictionary<string, string>
                      {
                          { "key",appointment.key  },
-                         { "carplate",van.CarPlate  },
-                         { "did","2"},
+                         { "carPlate",van.CarPlate  },
+                         { "vid",van.Vid },
                          { "company","Blue Team"},
-                         { "companyid",companyId},
-                         { "carStars","4.8"},
+                         { "companyId",companyId},
                          { "image","http:.."}
                      };
+            System.Diagnostics.Debug.WriteLine($"key: {appointment.key} comapnyId: {companyId}");
             var content = new FormUrlEncodedContent(dictionary);
-            var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/selectAppointmentById", content);
+            var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/selectAppointmentById", content); //this will set the selected appointment's acepted = true
             var responseString = await response.Content.ReadAsStringAsync();
             var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
-            Console.WriteLine(data.message);
+            System.Diagnostics.Debug.WriteLine(data.message);
         }
 
+        //he wants us to update the position every 5 seconds
+        //in the dictionaries: "did" is supposed to be "vid"
         //private async Task UpdatePositionFirebase()
         //{
 
