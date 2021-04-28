@@ -35,6 +35,7 @@ namespace MobileVaccination
         public DisplayVanRoutes displayRoutesDelegate;
         public static FirebaseClient client, client2;
         public int VaccCount = 0;
+        public static string companyId;
         public Mainform()
         {
             InitializeComponent();
@@ -95,41 +96,41 @@ namespace MobileVaccination
             //TravelToDestination(vans[0], appointmentList[0]);
 
             //There are only 2 appointments in his firebase right now so we need to create some of our own to test the startSimulation() more fully
-            appointmentList[1].destination.lat = 46.225650;
-            appointmentList[1].destination.lng = -119.235250;
-            appointmentList[1].acepted = false;
-            appointmentList[1].prospect.uid = 1;
+            //appointmentList[1].destination.lat = 46.225650;
+            //appointmentList[1].destination.lng = -119.235250;
+            //appointmentList[1].acepted = false;
+            //appointmentList[1].prospect.uid = 1;
 
-            appointmentList.Add(new Appointment()
-            {
-                acepted = false,
-                destination = new Destination() { lat = 46.272040, lng = -119.187530 },
-                prospect = new Patient() { uid = 2 }
-            });
-            appointmentList.Add(new Appointment()
-            {
-                acepted = false,
-                destination = new Destination() { lat = 46.226030, lng = -119.226760 },
-                prospect = new Patient() { uid = 3 }
-            });
-            appointmentList.Add(new Appointment()
-            {
-                acepted = false,
-                destination = new Destination() { lat = 46.257080, lng = -119.306210 },
-                prospect = new Patient() { uid = 4 }
-            });
-            appointmentList.Add(new Appointment()
-            {
-                acepted = false,
-                destination = new Destination() { lat = 46.340720, lng = -119.279650 },
-                prospect = new Patient() { uid = 5 }
-            });
-            appointmentList.Add(new Appointment()
-            {
-                acepted = false,
-                destination = new Destination() { lat = 46.2382670, lng = -119.1040960 },
-                prospect = new Patient() { uid = 6 }
-            });
+            //appointmentList.Add(new Appointment()
+            //{
+            //    acepted = false,
+            //    destination = new Destination() { lat = 46.272040, lng = -119.187530 },
+            //    prospect = new Patient() { uid = 2 }
+            //});
+            //appointmentList.Add(new Appointment()
+            //{
+            //    acepted = false,
+            //    destination = new Destination() { lat = 46.226030, lng = -119.226760 },
+            //    prospect = new Patient() { uid = 3 }
+            //});
+            //appointmentList.Add(new Appointment()
+            //{
+            //    acepted = false,
+            //    destination = new Destination() { lat = 46.257080, lng = -119.306210 },
+            //    prospect = new Patient() { uid = 4 }
+            //});
+            //appointmentList.Add(new Appointment()
+            //{
+            //    acepted = false,
+            //    destination = new Destination() { lat = 46.340720, lng = -119.279650 },
+            //    prospect = new Patient() { uid = 5 }
+            //});
+            //appointmentList.Add(new Appointment()
+            //{
+            //    acepted = false,
+            //    destination = new Destination() { lat = 46.2382670, lng = -119.1040960 },
+            //    prospect = new Patient() { uid = 6 }
+            //});
 
             startSimulation();
         }
@@ -172,7 +173,8 @@ namespace MobileVaccination
                                 //at this point we should have an initial list of appointments
                                 if (appointmentList[j].acepted == false)
                                 {
-                                    //if not already acepted, set it to acepted = true in his firebase, and active = "something cause its a string for some reason"
+                                    //if not already acepted, set it to acepted = true in his firebase
+                                    SelectAppointment(appointmentList[j], vans[i]);
                                     //...
                                     appointmentList[j].acepted = true;
                                     appointmentList[j].active = "true";
@@ -218,7 +220,7 @@ namespace MobileVaccination
             //******************** Initialization ***************************//
             client = new FirebaseClient("https://cpts323battle.firebaseio.com/");
             HttpClient httpclient = new HttpClient();
-            string selectedkey = "", responseString, companyId;
+            string selectedkey = "", responseString;
             FormUrlEncodedContent content;
             HttpResponseMessage response;
 
@@ -264,14 +266,14 @@ namespace MobileVaccination
                 { "companyName",company.companyName  },
                 { "status",company.status}
             };
-            //content = new FormUrlEncodedContent(dictionary);
-            //response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/reportCompany", content);
-            //responseString = await response.Content.ReadAsStringAsync();
-            //Response data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
+            content = new FormUrlEncodedContent(dictionary);
+            response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/reportCompany", content);
+            responseString = await response.Content.ReadAsStringAsync();
+            Response data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
 
-            //System.Diagnostics.Debug.WriteLine(data.message);
-            //System.Diagnostics.Debug.WriteLine(data.companyId);
-            //companyId = data.companyId;
+            System.Diagnostics.Debug.WriteLine(data.message);
+            System.Diagnostics.Debug.WriteLine(data.companyId);
+            companyId = data.companyId;
 
             //next step is to create our vans and add them to our firebase
             //first create the local Van objects and add them to the "vans" list
@@ -470,7 +472,10 @@ namespace MobileVaccination
                     {
                         Console.WriteLine($"Updating appointmentList:{appointment.Key}:->{appointment.Object.destination.destinationName}");
 
+                        mutex.WaitOne();
+
                         isNew = true;
+                        len = appointmentList.Count;
                         for (int i = 0; i < len; i++)
                         {
                             if (appointment.Key == appointmentList[i].key)
@@ -507,8 +512,44 @@ namespace MobileVaccination
                             };
                             appointmentList.Add(ap);
                         }
+
+                        mutex.ReleaseMutex();
                     }
                 });
         }
+
+        private async Task SelectAppointment(Appointment appointment, Van van)
+        {
+            //write to his firebase to accept an appointment
+            HttpClient httpclient = new HttpClient();
+
+            //******************* call cloud function select a appointment by id ****************/
+            var dictionary = new Dictionary<string, string>
+                     {
+                         { "key",appointment.key  },
+                         { "carplate",van.CarPlate  },
+                         { "did","2"},
+                         { "company","Blue Team"},
+                         { "companyid",companyId},
+                         { "carStars","4.8"},
+                         { "image","http:.."}
+                     };
+            var content = new FormUrlEncodedContent(dictionary);
+            var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/selectAppointmentById", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
+            Console.WriteLine(data.message);
+        }
+
+        //private async Task UpdatePositionFirebase()
+        //{
+
+        //}
+
+        //private static void FinishAppointment(Appointment appointment)
+        //{
+        //    //write to his firebase to finish an appointment
+
+        //}
     }
 }
