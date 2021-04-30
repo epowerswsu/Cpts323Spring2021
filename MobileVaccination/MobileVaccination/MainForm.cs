@@ -202,8 +202,10 @@ namespace MobileVaccination
                         }
                     }
                     UpdateVansInFirebase(); //update the vans in our firebase
+                    UpdatePositionFirebase(); //update position of our vans in his firebase
+
                     mutex.ReleaseMutex();
-                    Thread.Sleep(20000); //wait for a few seconds before checking the vans again, so this doesnt hog the mutex
+                    Thread.Sleep(5000); //wait for 5 seconds before checking the vans again, so this doesnt hog the mutex, also he wants the van position updated in his firebase every 5 seconds
                 }
                 System.Diagnostics.Debug.WriteLine("Finished Simulation");
             });
@@ -393,6 +395,7 @@ namespace MobileVaccination
 
                 //finished the appointment
                 mutex.WaitOne();
+
                 appointment.vaccinated = "true";
                 appointment.active = "false";
                 van.HasAppointment = false;
@@ -400,7 +403,7 @@ namespace MobileVaccination
                 van.Vials--;
                 System.Diagnostics.Debug.WriteLine($"Van {van.Vid} finished appointment {appointment.prospect.uid}");
                 VaccCount++;
-
+                FinishAppointment(appointment, van);
                 //update main screen
                 _ = textBox1.Invoke(new Action(() => textBox1.Text = VaccCount.ToString()));
                 mutex.ReleaseMutex();
@@ -533,7 +536,7 @@ namespace MobileVaccination
                          { "companyId",companyId},
                          { "image","http:.."}
                      };
-            System.Diagnostics.Debug.WriteLine($"key: {appointment.key} comapnyId: {companyId}");
+            //System.Diagnostics.Debug.WriteLine($"key: {appointment.key} comapnyId: {companyId}");
             var content = new FormUrlEncodedContent(dictionary);
             var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/selectAppointmentById", content); //this will set the selected appointment's acepted = true
             var responseString = await response.Content.ReadAsStringAsync();
@@ -543,15 +546,54 @@ namespace MobileVaccination
 
         //he wants us to update the position every 5 seconds
         //in the dictionaries: "did" is supposed to be "vid"
-        //private async Task UpdatePositionFirebase()
-        //{
+        private async Task UpdatePositionFirebase()
+        {
+            HttpClient httpclient = new HttpClient();
 
-        //}
+            foreach (Van van in vans)
+            {
+                System.Diagnostics.Debug.WriteLine($"updating van {van.Vid} in his firebase");
+                //******************* Call Cloud Function updatePosition ****************/
 
-        //private static void FinishAppointment(Appointment appointment)
-        //{
-        //    //write to his firebase to finish an appointment
+                var dictionary = new Dictionary<string, string>
+                {
+                 { "key",van.appointment.key },
+                 { "vid",van.Vid},
+                 { "companyId",companyId},
+                 { "lat",van.Position.Lat.ToString()},
+                 { "lng",van.Position.Lng.ToString()}
+                };
 
-        //}
+                var content = new FormUrlEncodedContent(dictionary);
+                var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/updatePosition", content);
+                var responseString = await response.Content.ReadAsStringAsync();
+                var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
+                System.Diagnostics.Debug.WriteLine(data.message);
+                System.Diagnostics.Debug.WriteLine("Current index for the point " + data.index);
+            }
+        }
+
+        private async Task FinishAppointment(Appointment appointment, Van van)
+        {
+            //write to his firebase to finish an appointment
+            HttpClient httpclient = new HttpClient();
+            //******************* Call Cloud Function for finishAppointment ****************/
+
+
+            var dictionary = new Dictionary<string, string>
+            {
+                { "key",appointment.key  },
+                { "vid",van.Vid},
+                { "companyId",companyId},
+                { "lat",van.Position.Lat.ToString()},
+                { "lng",van.Position.Lng.ToString()}
+            };
+
+            var content = new FormUrlEncodedContent(dictionary);
+            var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/finishAppointment", content);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
+            System.Diagnostics.Debug.WriteLine(data.message);
+        }
     }
 }
