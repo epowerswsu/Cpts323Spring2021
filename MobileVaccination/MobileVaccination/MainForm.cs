@@ -370,13 +370,13 @@ namespace MobileVaccination
         {
             //every thing in here runs in its own thread so it doesn't freeze up the Mainform's thread
             //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
-            Thread t = new Thread(() =>
+            Thread t = new Thread(async () =>
             {
                 Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
 
                 for (int i = 0; i < van.route.Points.Count; i++)
                 {
-                    Thread.Sleep(1000);    //after a few seconds the postion is updated
+                    Thread.Sleep(1000);    //after a few seconds the postion is updated, the time used here should depend on the distance between the two points
                     
                     
                     //makes sense to do calcs here
@@ -393,9 +393,35 @@ namespace MobileVaccination
                     mutex.ReleaseMutex();
                 }
 
-                //finished the appointment
-                mutex.WaitOne();
+                //arrive at patient's house, code 100
+                System.Diagnostics.Debug.WriteLine($"Van {van.Vid} arrived at appointment {appointment.prospect.uid}");
+                var child = client.Child("/appointmentsStatus/" + appointment.key + "/status/0");
+                var status = new Status
+                {
+                    code = 100
+                };
+                await child.PutAsync(status);
+                Thread.Sleep(18750); //take 5 mins to vaccinate, 5 sim minutes => (5*60)/16 = 18.75 real seconds
 
+                //patient vaccinated, code 110
+                System.Diagnostics.Debug.WriteLine($"Van {van.Vid} waiting at appointment {appointment.prospect.uid}");
+                var child2 = client.Child("/appointmentsStatus/" + appointment.key + "/status/0");
+                var status2 = new Status
+                {
+                    code = 110
+                };
+                await child2.PutAsync(status2);
+                Thread.Sleep(56250); //take 15 mins of supervision, 15 sim minutes => (15*60)/16 = 56.25 real seconds
+
+                //finished the appointment and patient supervision, code 120
+                var child3 = client.Child("/appointmentsStatus/" + appointment.key + "/status/0");
+                var status3 = new Status
+                {
+                    code = 120
+                };
+                await child3.PutAsync(status3);
+
+                mutex.WaitOne();
                 appointment.vaccinated = "true";
                 appointment.active = "false";
                 van.HasAppointment = false;
@@ -549,18 +575,17 @@ namespace MobileVaccination
             var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/selectAppointmentById", content); //this will set the selected appointment's acepted = true
             var responseString = await response.Content.ReadAsStringAsync();
             var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
-            System.Diagnostics.Debug.WriteLine(data.message);
+            //System.Diagnostics.Debug.WriteLine(data.message);
         }
 
         //he wants us to update the position every 5 seconds
-        //in the dictionaries: "did" is supposed to be "vid"
         private async Task UpdatePositionFirebase()
         {
             HttpClient httpclient = new HttpClient();
 
             foreach (Van van in vans)
             {
-                System.Diagnostics.Debug.WriteLine($"updating van {van.Vid} in his firebase");
+                //System.Diagnostics.Debug.WriteLine($"updating van {van.Vid} in his firebase");
                 //******************* Call Cloud Function updatePosition ****************/
 
                 var dictionary = new Dictionary<string, string>
@@ -606,7 +631,7 @@ namespace MobileVaccination
             var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/finishAppointment", content);
             var responseString = await response.Content.ReadAsStringAsync();
             var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
-            System.Diagnostics.Debug.WriteLine(data.message);
+            //System.Diagnostics.Debug.WriteLine(data.message);
         }
     }
 }
