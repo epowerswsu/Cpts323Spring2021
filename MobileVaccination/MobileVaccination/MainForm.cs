@@ -440,6 +440,14 @@ namespace MobileVaccination
             await child.PutAsync(van);
 
         }
+        private static async Task Delete()
+
+        {
+            var child = client2.Child("/Vans/");
+            await child.DeleteAsync();
+            System.Environment.Exit(0);
+        }
+
 
         public static double DistanceTo(double lat1, double lon1, double lat2, double lon2)
         {
@@ -571,6 +579,11 @@ namespace MobileVaccination
                 System.Diagnostics.Debug.WriteLine(data.message);
                 System.Diagnostics.Debug.WriteLine("Current index for the point " + data.index);
             }
+        }
+
+        private void button4_Click_1(object sender, EventArgs e)
+        {
+            Delete();
         }
 
         private async Task FinishAppointment(Appointment appointment, Van van)

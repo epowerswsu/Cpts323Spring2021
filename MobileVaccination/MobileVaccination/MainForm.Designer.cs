@@ -36,6 +36,7 @@ namespace MobileVaccination
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.textBox3 = new System.Windows.Forms.TextBox();
+            this.button4 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // gMapControl1
@@ -77,7 +78,7 @@ namespace MobileVaccination
             // button2
             // 
             this.button2.Location = new System.Drawing.Point(814, 117);
-            this.button2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button2.Margin = new System.Windows.Forms.Padding(2);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(191, 43);
             this.button2.TabIndex = 2;
@@ -100,7 +101,7 @@ namespace MobileVaccination
             this.textBox1.BackColor = System.Drawing.SystemColors.ActiveBorder;
             this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.textBox1.Location = new System.Drawing.Point(968, 304);
-            this.textBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox1.Margin = new System.Windows.Forms.Padding(2);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(22, 16);
             this.textBox1.TabIndex = 4;
@@ -110,7 +111,7 @@ namespace MobileVaccination
             this.textBox2.BackColor = System.Drawing.SystemColors.ActiveBorder;
             this.textBox2.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.textBox2.Location = new System.Drawing.Point(814, 304);
-            this.textBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox2.Margin = new System.Windows.Forms.Padding(2);
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(139, 16);
             this.textBox2.TabIndex = 5;
@@ -119,10 +120,20 @@ namespace MobileVaccination
             // textBox3
             // 
             this.textBox3.Location = new System.Drawing.Point(814, 396);
-            this.textBox3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.textBox3.Margin = new System.Windows.Forms.Padding(2);
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(178, 23);
             this.textBox3.TabIndex = 6;
+            // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(814, 562);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(176, 26);
+            this.button4.TabIndex = 7;
+            this.button4.Text = "Nuke Van FB";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click_1);
             // 
             // Mainform
             // 
@@ -130,6 +141,7 @@ namespace MobileVaccination
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveBorder;
             this.ClientSize = new System.Drawing.Size(1019, 605);
+            this.Controls.Add(this.button4);
             this.Controls.Add(this.textBox3);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.textBox1);
@@ -154,6 +166,7 @@ namespace MobileVaccination
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.Button button4;
     }
 }
 
