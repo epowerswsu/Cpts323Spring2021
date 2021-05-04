@@ -19,7 +19,7 @@ namespace MobileVaccination.ClassDefinitions
         public string Make;
         public string Model;
         public int Vials;
-        public double TimeSinceRefill;
+        public System.DateTime TimeOfLastRefill;
         public bool HasAppointment;
         public bool HasRoute;
         public Appointment appointment;
@@ -36,7 +36,7 @@ namespace MobileVaccination.ClassDefinitions
             PositionMarker.ToolTipText = Vid;
             PositionMarker.ToolTipMode = MarkerTooltipMode.Always;
             Vials = 0;
-            TimeSinceRefill = 0.0;
+            TimeOfLastRefill = DateTime.UtcNow;
             HasAppointment = false;
             HasRoute = false;
             appointment = null;

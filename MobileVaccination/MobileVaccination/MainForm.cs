@@ -137,9 +137,10 @@ namespace MobileVaccination
 
         private void startSimulation()
         {
-            double expireTime = 6.0; //6 hours?
+            double expireTime = 1350; //6 hours is 1350 seconds in sim time (6*60*60) / 16 
+            //double expireTime = 60;
             var startTime = DateTime.UtcNow;
-            int simulationTime = 3; //run for this many minutes
+            int simulationTime = 30; //run for this many minutes
 
             //running on a seperate thread to the UI can continue to run
             Thread t = new Thread(() =>
@@ -152,52 +153,49 @@ namespace MobileVaccination
                     mutex.WaitOne();
                     for (int i = 0; i < numVans; i++)
                     {
+                        //update each vans time since refill
+
                         if (vans[i].HasAppointment == false)  //dont need to check the vans that are already doing an appointment (this is multithreaded so that would cause problems)
                         {
                             //check if van needs refill
-                            if (vans[i].Vials <= 0 || vans[i].TimeSinceRefill >= expireTime)
+                            if (vans[i].Vials <= 0 || (DateTime.UtcNow - vans[i].TimeOfLastRefill) >= TimeSpan.FromSeconds(expireTime))
                             {
                                 //if this van is out of vials or they are expired, go back for refill
                                 vans[i].HasAppointment = true;
-
-                                //for now just fake it
-                                vans[i].Vials = 6;
-                                vans[i].TimeSinceRefill = 0.0;
-
-                                vans[i].HasAppointment = false;
-                            }
-
-                            //assign appointment to van
-                            for (int j = 0; j < appointmentList.Count(); j++)
-                            {
-                                //at this point we should have an initial list of appointments
-                                if (appointmentList[j].acepted == false)
-                                {
-                                    //if not already acepted, set it to acepted = true in his firebase
-                                    SelectAppointment(appointmentList[j], vans[i]);
-                                    //...
-                                    appointmentList[j].acepted = true;
-                                    appointmentList[j].active = "true";
-                                    //to do: write changed appointment back to his firebase
-                                    vans[i].appointment = appointmentList[j];
-                                    vans[i].HasAppointment = true;
-                                    System.Diagnostics.Debug.WriteLine($"Van with vid: {vans[i].Vid} took appointment with uid: {vans[i].appointment.prospect.uid}");
-                                    break;
-                                }
-                            }
-
-                            //if van was able to get an appointment then do that appointment
-                            if (vans[i].HasAppointment == true)
-                            {
-                                //if a van gets to this point then it was able to get an appointment
-                                //fill that appointment
-                                TravelToDestination(vans[i], vans[i].appointment); //van will run on own thread from this function and this loop will continue
+                                TravelToRefill(vans[i]);
                             }
                             else
                             {
-                                //the van was not able to get an appointment from our current list
-                                //this means our list was out of availible appointments, so read new appointments from his firebase
+                                //assign appointment to van if it doesnt need refill
+                                for (int j = 0; j < appointmentList.Count(); j++)
+                                {
+                                    //at this point we should have an initial list of appointments
+                                    if (appointmentList[j].acepted == false)
+                                    {
+                                        //if not already acepted, set it to acepted = true in his firebase
+                                        SelectAppointment(appointmentList[j], vans[i]);
+                                        //...
+                                        appointmentList[j].acepted = true;
+                                        appointmentList[j].active = "true";
+                                        vans[i].appointment = appointmentList[j];
+                                        vans[i].HasAppointment = true;
+                                        System.Diagnostics.Debug.WriteLine($"Van with vid: {vans[i].Vid} took appointment with uid: {vans[i].appointment.prospect.uid}");
+                                        break;
+                                    }
+                                }
+                                //if van was able to get an appointment then do that appointment
+                                if (vans[i].HasAppointment == true)
+                                {
+                                    //if a van gets to this point then it was able to get an appointment
+                                    //fill that appointment
+                                    TravelToDestination(vans[i], vans[i].appointment); //van will run on own thread from this function and this loop will continue
+                                }
+                                else
+                                {
+                                    //the van was not able to get an appointment from our current list
+                                    //this means our list was out of availible appointments, so read new appointments from his firebase
 
+                                }
                             }
                         }
                     }
@@ -211,6 +209,12 @@ namespace MobileVaccination
             });
             t.Start();
         }
+
+        //private static bool ChooseAppoinment(int totalSimTime, Appointment appointment)
+        //{
+
+        //    return false;
+        //}
 
         private static async Task InitializeFirebase()
         {
@@ -372,17 +376,23 @@ namespace MobileVaccination
             //use the mutex when changing this stuff because the startSimulation() may also be accessing the appointment or van
             Thread t = new Thread(async () =>
             {
+                double sleepTime;
+
                 Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
 
                 for (int i = 0; i < van.route.Points.Count; i++)
                 {
-                    Thread.Sleep(1000);    //after a few seconds the postion is updated, the time used here should depend on the distance between the two points
-                    
-                    
+                                      
                     //makes sense to do calcs here
-                    double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng);
+                    double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
                     //just for proof of concept, printing to Tbox
                     textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
+                    //35mph = 0.00972222 miles per second, t = d/v,
+                    sleepTime = dist / 0.00972222; //time in seconds = miles / velocity(in miles per second)
+                    sleepTime = sleepTime * 1000; //convert seconds to milliseconds
+                    sleepTime = sleepTime / 16; //divide by 16 to translate it to simulation time
+                    //System.Diagnostics.Debug.WriteLine($"{van.Vid} sleeping for {sleepTime}");
+                    Thread.Sleep(Convert.ToInt32(sleepTime));    //after a few seconds the postion is updated, the time used here should depend on the distance between the two points
 
 
                     mutex.WaitOne();
@@ -601,8 +611,8 @@ namespace MobileVaccination
                 var response = await httpclient.PostAsync("https://us-central1-cpts323battle.cloudfunctions.net/updatePosition", content);
                 var responseString = await response.Content.ReadAsStringAsync();
                 var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
-                System.Diagnostics.Debug.WriteLine(data.message);
-                System.Diagnostics.Debug.WriteLine("Current index for the point " + data.index);
+                //System.Diagnostics.Debug.WriteLine(data.message);
+                //System.Diagnostics.Debug.WriteLine("Current index for the point " + data.index);
             }
         }
 
@@ -633,5 +643,69 @@ namespace MobileVaccination
             var data = Newtonsoft.Json.JsonConvert.DeserializeObject<Response>(responseString);
             //System.Diagnostics.Debug.WriteLine(data.message);
         }
+
+        private void TravelToRefill(Van van)
+        {
+            //every thing in here runs in its own thread so it doesn't freeze up the Mainform's thread
+            //this function is like the TravelToDestination except it travels to the refill location and doesnt have to connect to firebase
+            Thread t = new Thread(async () =>
+            {
+                System.Diagnostics.Debug.WriteLine($"{van.Vid} is refilling");
+                double sleepTime;
+                //create an appointment object for the refill
+                Appointment refill = new Appointment()
+                {
+                    prospect = new Patient()
+                    {
+                        uid = 000,
+                    },
+                    destination = new Destination(){lat = refillLocation.Lat, lng = refillLocation.Lng, destinationName = "Vaccine Refill" },
+                    //pointList = appointment.Object.pointList,
+                    //InitialTime = appointment.Object.InitialTime,
+                    //acepted = appointment.Object.acepted,
+                    //vaccinated = appointment.Object.vaccinated,
+                    //active = appointment.Object.active,
+                    //key = appointment.Key,
+                };
+                van.appointment = refill;
+
+                Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
+
+                for (int i = 0; i < van.route.Points.Count; i++)
+                {
+
+                    //makes sense to do calcs here
+                    double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
+                                                                                                                                                  //just for proof of concept, printing to Tbox
+                    textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
+                    //35mph = 0.00972222 miles per second, t = d/v,
+                    sleepTime = dist / 0.00972222; //time in seconds = miles / velocity(in miles per second)
+                    sleepTime = sleepTime * 1000; //convert seconds to milliseconds
+                    sleepTime = sleepTime / 16;
+                    //System.Diagnostics.Debug.WriteLine($"{van.Vid} sleeping for {sleepTime}");
+                    Thread.Sleep(Convert.ToInt32(sleepTime));    //after a few seconds the postion is updated, the time used here should depend on the distance between the two points
+
+
+                    mutex.WaitOne();
+                    van.Position = van.route.Points[i]; //move to next point in point list
+                    van.PositionMarker.Position = van.Position;  //move the marker's position also
+                    UpdateVan(van); //could make this await, but small delay is not important
+
+                    mutex.ReleaseMutex();
+                }
+
+                //finished refill
+                mutex.WaitOne();
+                System.Diagnostics.Debug.WriteLine($"{van.Vid} finished refill");
+                van.HasAppointment = false;
+                van.HasRoute = false;
+                van.Vials = 6;
+                van.TimeOfLastRefill = DateTime.UtcNow;
+                mutex.ReleaseMutex();
+
+            });
+            t.Start();
+        }
     }
+
 }
