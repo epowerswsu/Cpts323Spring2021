@@ -380,11 +380,11 @@ namespace MobileVaccination
 
                 Invoke(displayRoutesDelegate); //call the route adding function using the ui thread
 
-                for (int i = 0; i < van.route.Points.Count; i++)
+                for (int i = 1; i <= van.route.Points.Count; i++)
                 {
                                       
                     //makes sense to do calcs here
-                    double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
+                    double dist = DistanceTo(van.route.Points[i-1].Lat, van.route.Points[i-1].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
                     //just for proof of concept, printing to Tbox
                     //textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
                     //35mph = 0.00972222 miles per second, t = d/v,
