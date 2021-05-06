@@ -29,7 +29,7 @@ namespace MobileVaccination
         private const int numVans = 6;
         private static List<Van> vans = new List<Van>();
         private static List<Appointment> appointmentList = new List<Appointment>();
-        public static PointLatLng refillLocation = new PointLatLng(46.280682, -119.290833);  //refill location currently unknown, using Kadlec for now
+        public static PointLatLng refillLocation = new PointLatLng(46.280452, -119.279831);  //refill location currently unknown, using Kadlec for now
         private static Mutex mutex = new Mutex(); //mutex needed to prevent multiple threads from modifying the appointment list or van list at the same time
         public delegate void DisplayVanRoutes();
         public DisplayVanRoutes displayRoutesDelegate;
