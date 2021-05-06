@@ -386,7 +386,7 @@ namespace MobileVaccination
                     //makes sense to do calcs here
                     double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
                     //just for proof of concept, printing to Tbox
-                    textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
+                    //textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
                     //35mph = 0.00972222 miles per second, t = d/v,
                     sleepTime = dist / 0.00972222; //time in seconds = miles / velocity(in miles per second)
                     sleepTime = sleepTime * 1000; //convert seconds to milliseconds
@@ -677,7 +677,7 @@ namespace MobileVaccination
                     //makes sense to do calcs here
                     double dist = DistanceTo(van.route.Points[0].Lat, van.route.Points[0].Lng, van.route.Points[i].Lat, van.route.Points[i].Lng); //get distance in miles
                                                                                                                                                   //just for proof of concept, printing to Tbox
-                    textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
+                    //textBox3.Invoke(new Action(() => textBox3.Text = dist.ToString()));
                     //35mph = 0.00972222 miles per second, t = d/v,
                     sleepTime = dist / 0.00972222; //time in seconds = miles / velocity(in miles per second)
                     sleepTime = sleepTime * 1000; //convert seconds to milliseconds
